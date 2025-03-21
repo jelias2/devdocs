@@ -1,0 +1,6 @@
+[dependencies]
+# Optimism monorepo
+[dependencies.infra]
+url = "https://github.com/ethereum-optimism/infra.git"
+path = "submodules/infra"
+branch = "main"
