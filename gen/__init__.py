@@ -9,6 +9,7 @@ from typing import Callable
 import toml
 
 from gen.log import get_logger
+from gen.deps import manage_dependencies
 
 MAX_DEPTH = 5
 GA_TRACKING_ID = 'G-YNLYYEX7MN'
@@ -106,6 +107,11 @@ def add_ga_tracking(book_dir: str):
 
 
 def run(root_dir: str):
+    # First, manage dependencies
+    if not manage_dependencies(root_dir):
+        log.error("Failed to manage dependencies")
+        return
+
     submodules = os.listdir(os.path.join(root_dir, 'submodules'))
 
     # Put the index module first since it outputs to the public directory, which will be deleted
