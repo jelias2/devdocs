@@ -3,7 +3,7 @@
 [dependencies.infra]
 url = "https://github.com/ethereum-optimism/infra.git"
 path = "submodules/infra"
-branch = "main"
+branch = "jelias2/book.md"
 
 [summary]
 content = """
@@ -20,7 +20,7 @@ Key areas covered include:
 
 [book]
 title = "OP Stack Infrastructure"
-authors = ["Optimism Contributors"]
+authors = ["Optimism Infrastructure Team"]
 language = "en"
 multilingual = false
 src = "src"
