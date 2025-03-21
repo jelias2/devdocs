@@ -9,4 +9,7 @@ wheels/
 # Virtual environments
 .venv
 
-public/*
+devdocs_public/*
+devdocs_private/*
+
+submodules/*
