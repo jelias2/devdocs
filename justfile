@@ -4,6 +4,7 @@ serve:
 
 clean:
     rm -rf ./public/*
+    rm -rf ./submodules/*
     touch ./public/.gitkeep
 
 build:
