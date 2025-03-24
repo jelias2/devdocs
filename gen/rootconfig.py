@@ -30,6 +30,9 @@ class BookConfig:
     summary: str
     readme: str
 
+    # Max depth for book collection
+    max_depth: int
+
     url: Optional[str] = None
     # Analytics
     google_analytics: Optional[str] = None
@@ -75,7 +78,10 @@ def load_root_config(root_dir: str, config_file: str) -> Optional[RootConfig]:
             
             # Content
             summary=raw_config["book"]["summary"],
-            readme=raw_config["book"]["readme"]
+            readme=raw_config["book"]["readme"],
+
+            # Max depth
+            max_depth=raw_config["book"].get("max-depth", 5),
         )
 
         return RootConfig(

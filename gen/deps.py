@@ -39,7 +39,7 @@ def clone_repostiories(root_config: RootConfig) -> bool:
     return success 
 
 
-def create_mdbook_index(root_config: RootConfig) -> bool:
+def create_index_mdbook(root_config: RootConfig) -> bool:
     # Create summary if it exists
     success = True
     book_path = Path("submodules/index")
@@ -162,3 +162,14 @@ def clone_repo(url: str, path: str | Path, branch: str = "main") -> bool:
         log.info(f"Updated to commit: {new}")
     return True
 
+
+def get_git_info(path: Path) -> tuple[str, str]:
+    """Get git information for a repository."""
+    commit = subprocess.check_output(["git", "rev-parse", "--short", "HEAD"], cwd=path).decode().strip()
+    remote = subprocess.check_output(["git", "config", "--get", "remote.origin.url"], cwd=path).decode().strip()
+    # Extract org/repo from remote URL
+    if remote.endswith('.git'):
+        remote = remote[:-4]
+    remote = '/'.join(remote.split('/')[-2:])
+
+    return commit, remote

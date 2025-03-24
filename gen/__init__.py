@@ -9,11 +9,10 @@ from typing import Callable
 import toml
 
 from gen.log import get_logger
-from gen.deps import clone_repostiories, create_mdbook_index
+from gen.deps import clone_repostiories, create_index_mdbook, get_git_info
 from gen.rootconfig import RootConfig, load_root_config
 
 MAX_DEPTH = 5
-GA_TRACKING_ID = 'G-YNLYYEX7MN'
 INDEX_MOD = 'index'
 
 log = get_logger(__name__)
@@ -37,8 +36,8 @@ def collect_files(root_path: str, predicate: Callable[[str, list[str], list[str]
     return book_dirs
 
 
-def collect_books(root_path: str) -> list[str]:
-    return collect_files(root_path, lambda current_dir, subdirs, files: 'book.toml' in files)
+def collect_books(root_path: str, max_depth: int) -> list[str]:
+    return collect_files(root_path, lambda current_dir, subdirs, files: 'book.toml' in files, max_depth)
 
 
 @dataclass
@@ -51,7 +50,6 @@ class BookConfig:
 
 
 def load_book_config(book_dir: str) -> BookConfig:
-   ## log.info(f"Loading book config for {book_dir}")
     dirname = os.path.basename(book_dir)
     raw_config = toml.load(os.path.join(book_dir, 'book.toml'))
 
@@ -97,14 +95,15 @@ def is_subdir(path: str | Path, parent: str | Path) -> bool:
         return False
 
 
-def add_ga_tracking(root_config: RootConfig, book_dir: str):
+def add_ga_tracking(ga_id: str, book_dir: str):
+    """Add Google Analytics tracking to each of the books."""
     config_path = os.path.join(book_dir, 'book.toml')
     raw_config = toml.load(config_path)
     if 'output' not in raw_config:
         raw_config['output'] = {}
     if 'html' not in raw_config['output']:
         raw_config['output']['html'] = {}
-    raw_config['output']['html']['google-analytics'] = root_config.book.google_analytics
+    raw_config['output']['html']['google-analytics'] = ga_id
     with open(config_path, 'w') as f:
         toml.dump(raw_config, f)
 
@@ -120,8 +119,8 @@ def run(root_dir: str, config_file: str):
         log.error("Failed to manage dependencies")
         return
 
-    if not create_mdbook_index(root_config):
-        log.error("Failed to create mdbook index")
+    if not create_index_mdbook(root_config):
+        log.error("Failed to create index mdbook index")
         return
 
     submodules = os.listdir(os.path.join(root_dir, 'submodules'))
@@ -134,26 +133,30 @@ def run(root_dir: str, config_file: str):
     mods_by_book = []
 
     for mod in submodules:
-        book_dirs = collect_books(os.path.join(root_dir, 'submodules', mod))
+        mod_path = os.path.join(root_dir, 'submodules', mod)
+        book_dirs = collect_books(mod_path, root_config.book.max_depth)
         configs = []
+        commit, remote = get_git_info(mod_path)
+
+        
         for book_dir in book_dirs:
-            add_ga_tracking(root_config, book_dir)
+            add_ga_tracking(root_config.book.google_analytics, book_dir)
             configs.append(load_book_config(book_dir))
-        mods_by_book.append((mod, configs))
+        mods_by_book.append((mod, configs, commit, remote))
 
     # Generate the README.md file for the index module
     with open(os.path.join(root_dir, 'submodules', 'index', 'src', 'README.md'), 'a') as f:
-        for mod, configs in mods_by_book:
+        for mod, configs, commit, remote in mods_by_book:
             if mod == INDEX_MOD:
                 continue
             log.info(f"generating index readme for {mod}")
-            f.write(f'## `ethereum-optimism/{mod}`\n\n')
+            f.write(f'## `{remote} @ {commit}`\n\n')
             for config in configs:
                 config = load_book_config(config.dir)
                 f.write(f'- [{config.title}]({root_config.book.url}/{config.site_url.replace('/', '')})\n')
             f.write('\n')
     
-    for mod, configs in mods_by_book:
+    for mod, configs, _, _ in mods_by_book:
         log.info(f'Processing submodule {mod}')
 
         for config in configs:
