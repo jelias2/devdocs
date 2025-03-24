@@ -5,6 +5,7 @@ from typing import Dict, Any
 
 from gen.log import get_logger
 from gen.rootconfig import RootConfig, DependencyConfig, BookConfig
+import toml
 
 log = get_logger(__name__)
 
@@ -63,21 +64,42 @@ def create_readme(path: Path, content: str) -> bool:
         log.error(f"Failed to create readme.md: {e}")
         return False
 
-def create_book_config(path: Path, config: dict) -> bool:
+def create_book_config(path: Path, root_config: RootConfig) -> bool:
     """Create or update book.toml with the provided configuration."""
     try:
         book_path = path / "book.toml"
         
-        # Create book config from relevant sections
-        book_config = {}
-        for section in ['book', 'build', 'output']:
-            if section in config:
-                book_config[section] = config[section]
+        # Create book config with the correct structure and defaults
+        book_config = {
+            "book": {
+                "authors": getattr(root_config.book, "authors", ["Unknown"]),
+                "language": getattr(root_config.book, "language", "en"),
+                "multilingual": getattr(root_config.book, "multilingual", False),
+                "src": getattr(root_config.book, "src", "src"),
+                "title": getattr(root_config.book, "title", "Untitled")
+            },
+            "build": {
+                "create-missing": getattr(root_config.book, "create_missing", False)
+            }
+        }
+
+        # Only add output.html section if google_analytics is present
+        if getattr(root_config.book, "google_analytics", None):
+            book_config["output"] = {
+                "html": {
+                    "google-analytics": root_config.book.google_analytics
+                }
+            }
 
         # Write the configuration
-        import toml
         with open(book_path, "w") as f:
             toml.dump(book_config, f)
+        log.info(f"Created/updated book.toml at {book_path}")
+
+        # Create the summary file
+        if not create_summary_file(path, root_config):
+            log.warning("Failed to create SUMMARY.md")
+            
         log.info(f"Created/updated book.toml at {book_path}")
         return True
     except Exception as e:
@@ -105,14 +127,35 @@ def manage_dependencies(root_config: RootConfig) -> bool:
     book_path = Path("submodules/index")
     if root_config.book.summary:
         log.info(f"Creating readme summary for {root_config.book.title}")
-        if not create_readme(book_path.joinpath("src"), root_config.book.summary):
+        if not create_readme(book_path.joinpath("src"), root_config.book.readme):
            success = False
            log.error(f"Failed to create summary for {name}")
 
-   # TODO: Figure out what this does Create/update book.toml if book config exists
-    # if any(root_config.book.book, root_config.book.build, root_config.book.output):
-    #     if not create_book_config(book_path, root_config.book):
-    #        success = False
-    #        log.error(f"Failed to create book.toml for {name}")
-
+    if root_config.book and not create_book_config(book_path, root_config):
+        success = False
+        log.error(f"Failed to create book.toml for {name}")
+    
     return success 
+
+
+def create_summary_file(path: Path, root_config: RootConfig) -> bool:
+    """Create or update SUMMARY.md with the provided configuration."""
+    try:
+        # Ensure src directory exists
+        src_dir = path / "src"
+        src_dir.mkdir(exist_ok=True)
+        
+        summary_path = src_dir / "SUMMARY.md"
+        
+        # Get summary content with default if not present
+        summary_content = getattr(root_config.book, "summary", "# Summary\n\n[Introduction](README.md)")
+        
+        # Write the summary file
+        with open(summary_path, "w") as f:
+            f.write(summary_content)
+        
+        log.info(f"Created/updated SUMMARY.md at {summary_path}")
+        return True
+    except Exception as e:
+        log.error(f"Failed to create SUMMARY.md: {e}")
+        return False

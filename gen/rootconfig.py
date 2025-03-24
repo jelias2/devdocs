@@ -28,6 +28,7 @@ class BookConfig:
     build_dir: str
     # Content
     summary: str
+    readme: str
 
     url: Optional[str] = None
     # Analytics
@@ -40,7 +41,7 @@ class RootConfig:
 
 def load_root_config(root_dir: str) -> Optional[RootConfig]:
     """Load the root configuration from the root directory."""
-    config_path = Path(root_dir) / 'infra.dependencies.toml'
+    config_path = Path(root_dir) / 'dependencies.toml'
     if not config_path.exists():
         log.error(f"Config file not found at {config_path}")
         return None
@@ -72,7 +73,8 @@ def load_root_config(root_dir: str) -> Optional[RootConfig]:
             google_analytics=raw_config["book"]["google-analytics"],
             
             # Content
-            summary=raw_config["book"]["summary"]
+            summary=raw_config["book"]["summary"],
+            readme=raw_config["book"]["readme"]
         )
 
         return RootConfig(
