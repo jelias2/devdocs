@@ -20,6 +20,11 @@ src = "src"
 url = "http://localhost:8000"
 
 summary = """
+# Summary
+[Introduction](./README.md)
+"""
+
+readme = """
 # Introduction
 
 This repository contains infrastructure-related documentation and resources for the Optimism network.
