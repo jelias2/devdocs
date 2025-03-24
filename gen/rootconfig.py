@@ -47,6 +47,7 @@ def load_root_config(root_dir: str, config_file: str) -> Optional[RootConfig]:
         return None
 
     try:
+        log.info(f"loading from {config_path}")
         raw_config = toml.load(config_path)
         
         # Parse dependencies

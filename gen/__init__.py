@@ -9,8 +9,8 @@ from typing import Callable
 import toml
 
 from gen.log import get_logger
-from gen.deps import manage_dependencies
-from gen.rootconfig import load_root_config
+from gen.deps import clone_repostiories, create_mdbook_index
+from gen.rootconfig import RootConfig, load_root_config
 
 MAX_DEPTH = 5
 GA_TRACKING_ID = 'G-YNLYYEX7MN'
@@ -97,28 +97,31 @@ def is_subdir(path: str | Path, parent: str | Path) -> bool:
         return False
 
 
-def add_ga_tracking(book_dir: str):
+def add_ga_tracking(root_config: RootConfig, book_dir: str):
     config_path = os.path.join(book_dir, 'book.toml')
     raw_config = toml.load(config_path)
     if 'output' not in raw_config:
         raw_config['output'] = {}
     if 'html' not in raw_config['output']:
         raw_config['output']['html'] = {}
-    raw_config['output']['html']['google-analytics'] = GA_TRACKING_ID
+    raw_config['output']['html']['google-analytics'] = root_config.book.google_analytics
     with open(config_path, 'w') as f:
         toml.dump(raw_config, f)
 
 
 def run(root_dir: str, config_file: str):
     # First, manage dependencies
-    log.info(f"starting dependencies management with root_dir: {root_dir}")
 
     root_config = load_root_config(root_dir, config_file)
     log.info(f"root_config title: {root_config.book.title}")
     log.info(f"root_config url: {root_config.book.url}")
 
-    if not manage_dependencies(root_config):
+    if not clone_repostiories(root_config):
         log.error("Failed to manage dependencies")
+        return
+
+    if not create_mdbook_index(root_config):
+        log.error("Failed to create mdbook index")
         return
 
     submodules = os.listdir(os.path.join(root_dir, 'submodules'))
@@ -134,7 +137,7 @@ def run(root_dir: str, config_file: str):
         book_dirs = collect_books(os.path.join(root_dir, 'submodules', mod))
         configs = []
         for book_dir in book_dirs:
-            add_ga_tracking(book_dir)
+            add_ga_tracking(root_config, book_dir)
             configs.append(load_book_config(book_dir))
         mods_by_book.append((mod, configs))
 
@@ -158,8 +161,10 @@ def run(root_dir: str, config_file: str):
             build_book(config)
 
             if mod == INDEX_MOD:
+                # Move the index book to the root public directory
                 outdir = os.path.join(root_dir, 'public')
             else:
+                # For all other books, move them to the public directory with the site_url as the subdirectory
                 outdir = os.path.join(root_dir, 'public', config.site_url)
 
             log.info(f'Moving book {config.title} to public dir {outdir}')

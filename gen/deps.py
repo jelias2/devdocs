@@ -18,50 +18,66 @@ def run_command(cmd: list[str], cwd: str | None = None) -> bool:
         log.error(f"Error running command {' '.join(cmd)}: {e}")
         return False
 
-def clone_repo(url: str, path: str | Path, branch: str = "main") -> bool:
-    """Clone a repository if it doesn't exist, or update it if it does."""
-    path = Path(path)
+
+def clone_repostiories(root_config: RootConfig) -> bool:
+    """Clone all repositories based on dependencies.toml configuration."""
+
+    success = True
+    # Clone repositories
+    for name, dep in root_config.dependencies.items():
+        log.info(f"Processing dependency {name} @ {dep.branch}...")
+        # Clone/update repository
+        if not clone_repo(
+            dep.url, 
+            dep.path, 
+            dep.branch
+        ):
+            success = False
+            log.error(f"Failed to clone repository {name}")
+            continue
     
-    if not path.exists():
-        log.info(f"Cloning {url} to {path}")
-        if not run_command(["git", "clone", "-b", branch, url, str(path)]):
-            return False
-    else:
-        log.info(f"Updating {path}")
-        # Get current commit
-        if not run_command(["git", "rev-parse", "HEAD"], cwd=path):
-            return False
-        current = subprocess.check_output(["git", "rev-parse", "HEAD"], cwd=path).decode().strip()
-        log.info(f"Current commit: {current}")
+    return success 
 
-        if not all([
-            run_command(["git", "fetch", "origin"], cwd=path),
-            run_command(["git", "reset", "--hard", "HEAD"], cwd=path),
-            run_command(["git", "clean", "-fd"], cwd=path),
-            run_command(["git", "pull", "origin", branch], cwd=path)
-        ]):
-            return False
 
-        # Get new commit
-        if not run_command(["git", "rev-parse", "HEAD"], cwd=path):
-            return False
-        new = subprocess.check_output(["git", "rev-parse", "HEAD"], cwd=path).decode().strip()
-        log.info(f"Updated to commit: {new}")
-    return True
+def create_mdbook_index(root_config: RootConfig) -> bool:
+    # Create summary if it exists
+    success = True
+    book_path = Path("submodules/index")
+    if root_config.book.summary:
+        log.info(f"Creating readme.mdfor root submodules/index")
+        if not create_readme(book_path.joinpath("src"), root_config.book.readme):
+           success = False
+           log.error(f"Failed to readme.md for submodules/index")
 
-def create_readme(path: Path, content: str) -> bool:
-    """Create a readme.md file with the provided content."""
+    if root_config.book and not create_book_toml(book_path, root_config):
+        success = False
+        log.error(f"Failed to create book.toml for submodules/index")
+    
+    if not create_summary_file(book_path, root_config):
+        success = False
+        log.warning("Failed to create SUMMARY.md for submodules/index")
+    return success
+
+def create_summary_file(path: Path, root_config: RootConfig) -> bool:
+    """Create or update SUMMARY.md with the provided configuration."""
     try:
-        # Create parent directories if they don't exist
-        path.mkdir(parents=True, exist_ok=True)
+        # Ensure src directory exists
+        src_dir = path / "src"
+        src_dir.mkdir(exist_ok=True)
         
-        readme_path = path / "README.md"
-        with open(readme_path, "w") as f:
-            f.write(content)
-            log.info(f"Created readme.md at {readme_path}")
+        summary_path = src_dir / "SUMMARY.md"
+        
+        # Get summary content with default if not present
+        summary_content = getattr(root_config.book, "summary", "# Summary\n\n[Introduction](README.md)")
+        
+        # Write the summary file
+        with open(summary_path, "w") as f:
+            f.write(summary_content)
+        
+        log.info(f"Created/updated SUMMARY.md at {summary_path}")
         return True
     except Exception as e:
-        log.error(f"Failed to create readme.md: {e}")
+        log.error(f"Failed to create SUMMARY.md: {e}")
         return False
 
 def create_book_toml(path: Path, root_config: RootConfig) -> bool:
@@ -100,65 +116,49 @@ def create_book_toml(path: Path, root_config: RootConfig) -> bool:
         log.error(f"Failed to create book.toml: {e}")
         return False
 
-def manage_dependencies(root_config: RootConfig) -> bool:
-    """Manage dependencies based on dependencies.toml configuration."""
-
-    success = True
-    # Process dependencies
-    for name, dep in root_config.dependencies.items():
-        log.info(f"Processing dependency {name} @ {dep.branch}...")
-        # Clone/update repository
-        if not clone_repo(
-            dep.url, 
-            dep.path, 
-            dep.branch
-        ):
-            success = False
-            log.error(f"Failed to process dependency {name}")
-            continue
-
-    # Create summary if it exists
-    book_path = Path("submodules/index")
-    if root_config.book.summary:
-        log.info(f"Creating readme summary for {root_config.book.title}")
-        if not create_readme(book_path.joinpath("src"), root_config.book.readme):
-           success = False
-           log.error(f"Failed to create summary for {name}")
-
-    if root_config.book and not create_book_toml(book_path, root_config):
-        success = False
-        log.error(f"Failed to create book.toml for {name}")
-
-    if not create_book_toml(book_path, root_config):
-        success = False
-        log.warning("Failed to create book.toml")
-    
-    if not create_summary_file(book_path, root_config):
-        success = False
-        log.warning("Failed to create SUMMARY.md")
-    
-    
-    return success 
-
-
-def create_summary_file(path: Path, root_config: RootConfig) -> bool:
-    """Create or update SUMMARY.md with the provided configuration."""
+def create_readme(path: Path, content: str) -> bool:
+    """Create a readme.md file with the provided content."""
     try:
-        # Ensure src directory exists
-        src_dir = path / "src"
-        src_dir.mkdir(exist_ok=True)
+        # Create parent directories if they don't exist
+        path.mkdir(parents=True, exist_ok=True)
         
-        summary_path = src_dir / "SUMMARY.md"
-        
-        # Get summary content with default if not present
-        summary_content = getattr(root_config.book, "summary", "# Summary\n\n[Introduction](README.md)")
-        
-        # Write the summary file
-        with open(summary_path, "w") as f:
-            f.write(summary_content)
-        
-        log.info(f"Created/updated SUMMARY.md at {summary_path}")
+        readme_path = path / "README.md"
+        with open(readme_path, "w") as f:
+            f.write(content)
+            log.info(f"Created readme.md at {readme_path}")
         return True
     except Exception as e:
-        log.error(f"Failed to create SUMMARY.md: {e}")
+        log.error(f"Failed to create readme.md: {e}")
         return False
+
+def clone_repo(url: str, path: str | Path, branch: str = "main") -> bool:
+    """Clone a repository if it doesn't exist, or update it if it does."""
+    path = Path(path)
+    
+    if not path.exists():
+        log.info(f"Cloning {url} to {path}")
+        if not run_command(["git", "clone", "-b", branch, url, str(path)]):
+            return False
+    else:
+        log.info(f"Updating {path}")
+        # Get current commit
+        if not run_command(["git", "rev-parse", "HEAD"], cwd=path):
+            return False
+        current = subprocess.check_output(["git", "rev-parse", "HEAD"], cwd=path).decode().strip()
+        log.info(f"Current commit: {current}")
+
+        if not all([
+            run_command(["git", "fetch", "origin"], cwd=path),
+            run_command(["git", "reset", "--hard", "HEAD"], cwd=path),
+            run_command(["git", "clean", "-fd"], cwd=path),
+            run_command(["git", "pull", "origin", branch], cwd=path)
+        ]):
+            return False
+
+        # Get new commit
+        if not run_command(["git", "rev-parse", "HEAD"], cwd=path):
+            return False
+        new = subprocess.check_output(["git", "rev-parse", "HEAD"], cwd=path).decode().strip()
+        log.info(f"Updated to commit: {new}")
+    return True
+
