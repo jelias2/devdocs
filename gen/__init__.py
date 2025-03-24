@@ -108,11 +108,11 @@ def add_ga_tracking(book_dir: str):
         toml.dump(raw_config, f)
 
 
-def run(root_dir: str):
+def run(root_dir: str, config_file: str):
     # First, manage dependencies
     log.info(f"starting dependencies management with root_dir: {root_dir}")
 
-    root_config = load_root_config(root_dir)
+    root_config = load_root_config(root_dir, config_file)
     log.info(f"root_config title: {root_config.book.title}")
     log.info(f"root_config url: {root_config.book.url}")
 

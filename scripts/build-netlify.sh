@@ -55,9 +55,8 @@ if ! command -v uv &> /dev/null; then
     curl -LsSf https://astral.sh/uv/install.sh | sh
 fi
 
-# echo "Updating submodules..."
-# COMMIT=false bash "$SCRIPT_DIR/update-submodules.sh"
-
 echo "Building..."
 export PATH="$HOME/.cargo/bin:$PATH"
-uv run run.py
+
+CONFIG_FILE=${1:-"dependencies.toml"}  # Use first argument or default
+uv run run.py -c "$CONFIG_FILE"

@@ -39,9 +39,9 @@ class RootConfig:
     dependencies: Dict[str, DependencyConfig]
     book: BookConfig
 
-def load_root_config(root_dir: str) -> Optional[RootConfig]:
+def load_root_config(root_dir: str, config_file: str) -> Optional[RootConfig]:
     """Load the root configuration from the root directory."""
-    config_path = Path(root_dir) / 'dependencies.toml'
+    config_path = Path(root_dir) / config_file
     if not config_path.exists():
         log.error(f"Config file not found at {config_path}")
         return None

@@ -7,5 +7,5 @@ clean:
     rm -rf ./submodules/*
     touch ./public/.gitkeep
 
-build:
-    bash ./scripts/build-netlify.sh
+build config="dependencies.toml":
+    bash ./scripts/build-netlify.sh "{{config}}"
