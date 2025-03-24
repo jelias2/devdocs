@@ -148,7 +148,7 @@ def run(root_dir: str):
                 config = load_book_config(config.dir)
                 f.write(f'- [{config.title}]({root_config.book.url}/{config.site_url.replace('/', '')})\n')
             f.write('\n')
-
+    
     for mod, configs in mods_by_book:
         log.info(f'Processing submodule {mod}')
 
