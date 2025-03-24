@@ -27,6 +27,12 @@ def clone_repo(url: str, path: str | Path, branch: str = "main") -> bool:
             return False
     else:
         log.info(f"Updating {path}")
+        # Get current commit
+        if not run_command(["git", "rev-parse", "HEAD"], cwd=path):
+            return False
+        current = subprocess.check_output(["git", "rev-parse", "HEAD"], cwd=path).decode().strip()
+        log.info(f"Current commit: {current}")
+
         if not all([
             run_command(["git", "fetch", "origin"], cwd=path),
             run_command(["git", "reset", "--hard", "HEAD"], cwd=path),
@@ -34,6 +40,12 @@ def clone_repo(url: str, path: str | Path, branch: str = "main") -> bool:
             run_command(["git", "pull", "origin", branch], cwd=path)
         ]):
             return False
+
+        # Get new commit
+        if not run_command(["git", "rev-parse", "HEAD"], cwd=path):
+            return False
+        new = subprocess.check_output(["git", "rev-parse", "HEAD"], cwd=path).decode().strip()
+        log.info(f"Updated to commit: {new}")
     return True
 
 def create_readme(path: Path, content: str) -> bool:
