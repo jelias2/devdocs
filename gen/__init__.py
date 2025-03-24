@@ -10,6 +10,7 @@ import toml
 
 from gen.log import get_logger
 from gen.deps import manage_dependencies
+from gen.rootconfig import load_root_config
 
 MAX_DEPTH = 5
 GA_TRACKING_ID = 'G-YNLYYEX7MN'
@@ -19,11 +20,12 @@ log = get_logger(__name__)
 
 
 def collect_files(root_path: str, predicate: Callable[[str, list[str], list[str]], bool], max_depth=MAX_DEPTH) -> list[
-    str]:
+        str]:
     book_dirs = []
     for current_dir, subdirs, files in os.walk(root_path):
         relative_path = os.path.relpath(current_dir, root_path)
-        current_depth = 0 if relative_path == '.' else relative_path.count(os.sep) + 1
+        current_depth = 0 if relative_path == '.' else relative_path.count(
+            os.sep) + 1
 
         if current_depth > max_depth:
             subdirs.clear()
@@ -108,7 +110,13 @@ def add_ga_tracking(book_dir: str):
 
 def run(root_dir: str):
     # First, manage dependencies
-    if not manage_dependencies(root_dir):
+    log.info(f"starting dependencies management with root_dir: {root_dir}")
+
+    root_config = load_root_config(root_dir)
+    log.info(f"root_config title: {root_config.book.title}")
+    log.info(f"root_config url: {root_config.book.url}")
+
+    if not manage_dependencies(root_config):
         log.error("Failed to manage dependencies")
         return
 
@@ -134,10 +142,11 @@ def run(root_dir: str):
         for mod, configs in mods_by_book:
             if mod == INDEX_MOD:
                 continue
+            log.info(f"generating index readme for {mod}")
             f.write(f'## `ethereum-optimism/{mod}`\n\n')
             for config in configs:
                 config = load_book_config(config.dir)
-                f.write(f'- [{config.title}](https://devdocs.optimism.io/{config.site_url.replace('/', '')})\n')
+                f.write(f'- [{config.title}]({root_config.book.url}/{config.site_url.replace('/', '')})\n')
             f.write('\n')
 
     for mod, configs in mods_by_book:
@@ -155,7 +164,8 @@ def run(root_dir: str):
             log.info(f'Moving book {config.title} to public dir {outdir}')
 
             if not is_subdir(outdir, root_dir):
-                raise ValueError(f'Output directory {outdir} is not a subdirectory of root dir {root_dir}!')
+                raise ValueError(
+                    f'Output directory {outdir} is not a subdirectory of root dir {root_dir}!')
             if os.path.exists(outdir):
                 log.info(f'Removing existing build dir {outdir}')
                 shutil.rmtree(outdir)

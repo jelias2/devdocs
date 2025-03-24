@@ -4,6 +4,7 @@ from pathlib import Path
 from typing import Dict, Any
 
 from gen.log import get_logger
+from gen.rootconfig import RootConfig, DependencyConfig, BookConfig
 
 log = get_logger(__name__)
 
@@ -28,7 +29,8 @@ def clone_repo(url: str, path: str | Path, branch: str = "main") -> bool:
         log.info(f"Updating {path}")
         if not all([
             run_command(["git", "fetch", "origin"], cwd=path),
-            run_command(["git", "checkout", branch], cwd=path),
+            run_command(["git", "reset", "--hard", "HEAD"], cwd=path),
+            run_command(["git", "clean", "-fd"], cwd=path),
             run_command(["git", "pull", "origin", branch], cwd=path)
         ]):
             return False
@@ -67,31 +69,18 @@ def create_book_config(path: Path, config: dict) -> bool:
         log.error(f"Failed to create book.toml: {e}")
         return False
 
-def manage_dependencies(root_dir: str) -> bool:
+def manage_dependencies(root_config: RootConfig) -> bool:
     """Manage dependencies based on dependencies.toml configuration."""
-    deps_file = Path(root_dir) / "infra.dependencies.toml"
-    if not deps_file.exists():
-        log.error(f"Dependencies file not found at {deps_file}")
-        return False
-
-    try:
-        import toml
-        config = toml.load(deps_file)
-    except Exception as e:
-        log.error(f"Error loading dependencies.toml: {e}")
-        return False
 
     success = True
     # Process dependencies
-    for name, dep in config["dependencies"].items():
-        log.info(f"Processing dependency {name}...")
-        repo_path = Path(dep["path"])
-        
+    for name, dep in root_config.dependencies.items():
+        log.info(f"Processing dependency {name} @ {dep.branch}...")
         # Clone/update repository
         if not clone_repo(
-            dep["url"], 
-            repo_path, 
-            dep.get("branch", "main")
+            dep.url, 
+            dep.path, 
+            dep.branch
         ):
             success = False
             log.error(f"Failed to process dependency {name}")
@@ -99,15 +88,16 @@ def manage_dependencies(root_dir: str) -> bool:
 
     # Create summary if it exists
     book_path = Path("submodules/index")
-    if "summary" in config and "content" in config["summary"]:
-        if not create_readme(book_path.joinpath("src"), config["summary"]["content"]):
+    if root_config.book.summary:
+        log.info(f"Creating readme summary for {root_config.book.title}")
+        if not create_readme(book_path.joinpath("src"), root_config.book.summary):
            success = False
            log.error(f"Failed to create summary for {name}")
 
-   # Create/update book.toml if book config exists
-    if any(section in config for section in ['book', 'build', 'output']):
-        if not create_book_config(book_path, config):
-           success = False
-           log.error(f"Failed to create book.toml for {name}")
+   # TODO: Figure out what this does Create/update book.toml if book config exists
+    # if any(root_config.book.book, root_config.book.build, root_config.book.output):
+    #     if not create_book_config(book_path, root_config.book):
+    #        success = False
+    #        log.error(f"Failed to create book.toml for {name}")
 
     return success 
