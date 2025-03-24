@@ -49,15 +49,18 @@ def clone_repo(url: str, path: str | Path, branch: str = "main") -> bool:
     return True
 
 def create_readme(path: Path, content: str) -> bool:
-    """Create a summary.md file with the provided content."""
+    """Create a readme.md file with the provided content."""
     try:
+        # Create parent directories if they don't exist
+        path.mkdir(parents=True, exist_ok=True)
+        
         readme_path = path / "README.md"
         with open(readme_path, "w") as f:
             f.write(content)
-        log.info(f"Created readme.md at {readme_path}")
+            log.info(f"Created readme.md at {readme_path}")
         return True
     except Exception as e:
-        log.error(f"Failed to create readme_path.md: {e}")
+        log.error(f"Failed to create readme.md: {e}")
         return False
 
 def create_book_config(path: Path, config: dict) -> bool:
