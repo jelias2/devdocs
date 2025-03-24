@@ -51,6 +51,7 @@ class BookConfig:
 
 
 def load_book_config(book_dir: str) -> BookConfig:
+   ## log.info(f"Loading book config for {book_dir}")
     dirname = os.path.basename(book_dir)
     raw_config = toml.load(os.path.join(book_dir, 'book.toml'))
 
@@ -67,7 +68,7 @@ def load_book_config(book_dir: str) -> BookConfig:
         build_dir=build_config.get('build-dir', 'book'),
         title=book_config.get('title', None),
         description=book_config.get('description', None),
-        dir=book_dir
+        dir=book_dir,
     )
     return config
 

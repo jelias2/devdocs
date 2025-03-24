@@ -64,7 +64,7 @@ def create_readme(path: Path, content: str) -> bool:
         log.error(f"Failed to create readme.md: {e}")
         return False
 
-def create_book_config(path: Path, root_config: RootConfig) -> bool:
+def create_book_toml(path: Path, root_config: RootConfig) -> bool:
     """Create or update book.toml with the provided configuration."""
     try:
         book_path = path / "book.toml"
@@ -94,12 +94,6 @@ def create_book_config(path: Path, root_config: RootConfig) -> bool:
         # Write the configuration
         with open(book_path, "w") as f:
             toml.dump(book_config, f)
-        log.info(f"Created/updated book.toml at {book_path}")
-
-        # Create the summary file
-        if not create_summary_file(path, root_config):
-            log.warning("Failed to create SUMMARY.md")
-            
         log.info(f"Created/updated book.toml at {book_path}")
         return True
     except Exception as e:
@@ -131,9 +125,18 @@ def manage_dependencies(root_config: RootConfig) -> bool:
            success = False
            log.error(f"Failed to create summary for {name}")
 
-    if root_config.book and not create_book_config(book_path, root_config):
+    if root_config.book and not create_book_toml(book_path, root_config):
         success = False
         log.error(f"Failed to create book.toml for {name}")
+
+    if not create_book_toml(book_path, root_config):
+        success = False
+        log.warning("Failed to create book.toml")
+    
+    if not create_summary_file(book_path, root_config):
+        success = False
+        log.warning("Failed to create SUMMARY.md")
+    
     
     return success 
 
