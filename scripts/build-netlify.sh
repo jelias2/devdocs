@@ -4,9 +4,11 @@ set -euo pipefail
 
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 
-# Install Rust if not already installed
-if ! command -v rustup &> /dev/null; then
-    echo "Installing Rust..."
+# Install Rust and set default toolchain if not already configured
+if ! command -v rustup &> /dev/null || ! rustup show active-toolchain &> /dev/null; then
+    echo "Installing/configuring Rust..."
+    curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
+    source "$HOME/.cargo/env"
     rustup default stable
 fi
 
@@ -46,6 +48,7 @@ fi
 # Install mdbook-mermaid if not already installed
 if ! command -v mdbook-mermaid &> /dev/null; then
     echo "Installing mdbook-mermaid..."
+    source "$HOME/.cargo/env"  # Ensure cargo is in PATH
     cargo install mdbook-mermaid mdbook-template
 fi
 
