@@ -5,6 +5,7 @@ from typing import Dict, Any
 
 from gen.log import get_logger
 from gen.rootconfig import RootConfig, DependencyConfig, BookConfig
+from gen.rootconfig import create_book_toml
 import toml
 
 log = get_logger(__name__)
@@ -38,98 +39,6 @@ def clone_repostiories(root_config: RootConfig) -> bool:
     
     return success 
 
-
-def create_index_mdbook(root_config: RootConfig) -> bool:
-    # Create summary if it exists
-    success = True
-    book_path = Path("submodules/index")
-    if root_config.book.summary:
-        log.info(f"Creating readme.mdfor root submodules/index")
-        if not create_readme(book_path.joinpath("src"), root_config.book.readme):
-           success = False
-           log.error(f"Failed to readme.md for submodules/index")
-
-    if root_config.book and not create_book_toml(book_path, root_config):
-        success = False
-        log.error(f"Failed to create book.toml for submodules/index")
-    
-    if not create_summary_file(book_path, root_config):
-        success = False
-        log.warning("Failed to create SUMMARY.md for submodules/index")
-    return success
-
-def create_summary_file(path: Path, root_config: RootConfig) -> bool:
-    """Create or update SUMMARY.md with the provided configuration."""
-    try:
-        # Ensure src directory exists
-        src_dir = path / "src"
-        src_dir.mkdir(exist_ok=True)
-        
-        summary_path = src_dir / "SUMMARY.md"
-        
-        # Get summary content with default if not present
-        summary_content = getattr(root_config.book, "summary", "# Summary\n\n[Introduction](README.md)")
-        
-        # Write the summary file
-        with open(summary_path, "w") as f:
-            f.write(summary_content)
-        
-        log.info(f"Created/updated SUMMARY.md at {summary_path}")
-        return True
-    except Exception as e:
-        log.error(f"Failed to create SUMMARY.md: {e}")
-        return False
-
-def create_book_toml(path: Path, root_config: RootConfig) -> bool:
-    """Create or update book.toml with the provided configuration."""
-    try:
-        book_path = path / "book.toml"
-        
-        # Create book config with the correct structure and defaults
-        book_config = {
-            "book": {
-                "authors": getattr(root_config.book, "authors", ["Unknown"]),
-                "language": getattr(root_config.book, "language", "en"),
-                "multilingual": getattr(root_config.book, "multilingual", False),
-                "src": getattr(root_config.book, "src", "src"),
-                "title": getattr(root_config.book, "title", "Untitled")
-            },
-            "build": {
-                "create-missing": getattr(root_config.book, "create_missing", False)
-            }
-        }
-
-        # Only add output.html section if google_analytics is present
-        if getattr(root_config.book, "google_analytics", None):
-            book_config["output"] = {
-                "html": {
-                    "google-analytics": root_config.book.google_analytics
-                }
-            }
-
-        # Write the configuration
-        with open(book_path, "w") as f:
-            toml.dump(book_config, f)
-        log.info(f"Created/updated book.toml at {book_path}")
-        return True
-    except Exception as e:
-        log.error(f"Failed to create book.toml: {e}")
-        return False
-
-def create_readme(path: Path, content: str) -> bool:
-    """Create a readme.md file with the provided content."""
-    try:
-        # Create parent directories if they don't exist
-        path.mkdir(parents=True, exist_ok=True)
-        
-        readme_path = path / "README.md"
-        with open(readme_path, "w") as f:
-            f.write(content)
-            log.info(f"Created readme.md at {readme_path}")
-        return True
-    except Exception as e:
-        log.error(f"Failed to create readme.md: {e}")
-        return False
 
 def clone_repo(url: str, path: str | Path, branch: str = "main") -> bool:
     """Clone a repository if it doesn't exist, or update it if it does."""
@@ -173,3 +82,16 @@ def get_git_info(path: Path) -> tuple[str, str]:
     remote = '/'.join(remote.split('/')[-2:])
 
     return commit, remote
+
+
+def is_subdir(path: str | Path, parent: str | Path) -> bool:
+    # Convert to Path objects and resolve to absolute paths
+    path = Path(path).resolve()
+    parent = Path(parent).resolve()
+
+    try:
+        # Use relative_to to check if path starts with parent
+        path.relative_to(parent)
+        return True
+    except ValueError:
+        return False

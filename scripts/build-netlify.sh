@@ -61,7 +61,7 @@ fi
 echo "Building..."
 export PATH="$HOME/.cargo/bin:$PATH"
 
-# Before running uv
+# Before running uv check for netifly CI variables
 if [ -n "${NETLIFY_URL:-}" ]; then
     DEPLOY_URL="$NETLIFY_URL"
 elif [ -n "${DEPLOY_URL:-}" ]; then
