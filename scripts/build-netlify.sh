@@ -61,5 +61,23 @@ fi
 echo "Building..."
 export PATH="$HOME/.cargo/bin:$PATH"
 
+# Before running uv
+if [ -n "${NETLIFY_URL:-}" ]; then
+    DEPLOY_URL="$NETLIFY_URL"
+elif [ -n "${DEPLOY_URL:-}" ]; then
+    DEPLOY_URL="$DEPLOY_URL"
+elif [ -n "${URL:-}" ]; then
+    DEPLOY_URL="$URL"
+else
+    echo "Warning: No Netlify deployment URL found in environment variables"
+    DEPLOY_URL="http://localhost:8000"  # fallback for local development
+fi
+
+echo "Deploy URL: $DEPLOY_URL"
+
+# Export the URL so it's available to the Python script
+export DEPLOY_URL
+
+# Run the Python script with the config
 CONFIG_FILE=${1:-"dependencies.toml"}  # Use first argument or default
 uv run run.py -c "$CONFIG_FILE"

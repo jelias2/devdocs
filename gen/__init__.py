@@ -110,10 +110,16 @@ def add_ga_tracking(ga_id: str, book_dir: str):
 
 def run(root_dir: str, config_file: str):
     # First, manage dependencies
-
     root_config = load_root_config(root_dir, config_file)
     log.info(f"root_config title: {root_config.book.title}")
     log.info(f"root_config url: {root_config.book.url}")
+    
+    # Only override URL if DEPLOY_URL is explicitly set in environment
+    deploy_url = os.environ.get('DEPLOY_URL')
+    if deploy_url:
+        deploy_url = deploy_url.rstrip('/')
+        root_config.book.url = deploy_url
+        log.info(f"Overriding config URL with deploy URL: {deploy_url}")
 
     if not clone_repostiories(root_config):
         log.error("Failed to manage dependencies")
