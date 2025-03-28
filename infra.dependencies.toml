@@ -37,6 +37,6 @@ Key areas covered include:
 """
 
 create-missing = false
-build-dir = "public"
+build-dir = "private_devdocs"
 
 google-analytics = "G-YNLYYEX7MN"

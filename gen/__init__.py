@@ -63,6 +63,11 @@ def run(root_dir: str, config_file: str):
                 config = load_book_config(config.dir)
                 f.write(f'- [{config.title}]({root_config.book.url}/{config.site_url.replace('/', '')})\n')
             f.write('\n')
+
+    # Create the build directory if it doesn't exist
+    if not os.path.exists(os.path.join(root_dir, root_config.book.build_dir)):
+        log.info(f'Creating build directory {os.path.join(root_dir, root_config.book.build_dir)}')
+        os.mkdir(os.path.join(root_dir, root_config.book.build_dir))
     
     for mod, configs, _, _ in mods_by_book:
         log.info(f'Processing submodule {mod}')
@@ -73,12 +78,12 @@ def run(root_dir: str, config_file: str):
 
             if mod == INDEX_MOD:
                 # Move the index book to the root public directory
-                outdir = os.path.join(root_dir, 'public')
+                outdir = os.path.join(root_dir, root_config.book.build_dir)
             else:
                 # For all other books, move them to the public directory with the site_url as the subdirectory
-                outdir = os.path.join(root_dir, 'public', config.site_url)
+                outdir = os.path.join(root_dir, root_config.book.build_dir, config.site_url)
 
-            log.info(f'Moving book {config.title} to public dir {outdir}')
+            log.info(f'Moving book {config.title} to {root_config.book.build_dir} dir {outdir}')
 
             if not is_subdir(outdir, root_dir):
                 raise ValueError(

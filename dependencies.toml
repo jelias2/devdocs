@@ -41,6 +41,6 @@ summary = """
 
 
 create-missing = false
-build-dir = "public"
+build-dir = "devdocs_public"
 
 google-analytics = "G-YNLYYEX7MN"
