@@ -1,46 +1,14 @@
 version: 2.1
 
-# Define a command to build and deploy a single documentation site
-commands:
-  build_and_deploy:
-    parameters:
-      config_url:
-        type: string
-      build_hook:
-        type: string
-      config_name:
-        type: string
-    steps:
-      - checkout
-      - run:
-          name: Build docs for << parameters.config_name >>
-          command: |
-            mkdir -p configs
-            echo "Downloading << parameters.config_name >>..."
-            curl -L << parameters.config_url >> -o "configs/<< parameters.config_name >>"
-            ./scripts/build-netlify.sh "configs/<< parameters.config_name >>"
-      - run:
-          name: Deploy to Netlify
-          command: |
-            curl -X POST -d {} << parameters.build_hook >>
-
 jobs:
-  build-all-docs:
+  trigger-netlify-build:
     docker:
       - image: cimg/base:stable
     steps:
-      - checkout
-      # Main docs
-      - build_and_deploy:
-          config_url: "https://raw.githubusercontent.com/jelias2/devdocs/refs/heads/jelias2/config-refactor/dependencies.toml"
-          config_name: "dependencies.toml"
-          build_hook: ${NETLIFY_BUILD_HOOK_MAIN}
-
-      # Infrastructure docs
-      - build_and_deploy:
-          config_url: "https://raw.githubusercontent.com/jelias2/devdocs/refs/heads/jelias2/config-refactor/infra.dependencies.toml"
-          config_name: "infra.dependencies.toml"
-          build_hook: ${NETLIFY_BUILD_HOOK_INFRA}
+      - run:
+          name: Trigger Netlify Build Hook
+          command: |
+            curl -X POST -d {} $NETLIFY_BUILD_HOOK
 
 workflows:
   version: 2
@@ -53,11 +21,11 @@ workflows:
               only:
                 - main
     jobs:
-      - build-all-docs
+      - trigger-netlify-build
 
   main:
     jobs:
-      - build-all-docs:
+      - trigger-netlify-build:
           filters:
             branches:
               only:
