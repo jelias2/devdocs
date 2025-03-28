@@ -44,29 +44,32 @@ def clone_repo(url: str, path: str | Path, branch: str = "main") -> bool:
     """Clone a repository if it doesn't exist, or update it if it does."""
     path = Path(path)
     
+    # Modify URL if GitHub PAT exists
+    github_pat = os.environ.get('GITHUB_PAT')
+    original_url = url
+    if github_pat and url.startswith('https://github.com/'):
+        log.info("Using GitHub PAT for authentication")
+        # Format: https://{token}:x-oauth-basic@github.com/org/repo.git
+        auth_url = f'https://{github_pat}:x-oauth-basic@github.com/{url.split("github.com/")[1]}'
+        log.info(f"Original URL: {original_url}")
+        log.info(f"Auth URL (PAT hidden): https://****:x-oauth-basic@github.com/{url.split('github.com/')[1]}")
+        url = auth_url
+    
     if not path.exists():
-        log.info(f"Cloning {url} to {path}")
+        log.info(f"Cloning {original_url} to {path}")
         if not run_command(["git", "clone", "-b", branch, url, str(path)]):
             return False
     else:
         log.info(f"Updating {path}")
         # Get current commit
-        if not run_command(["git", "rev-parse", "HEAD"], cwd=path):
-            return False
         current = subprocess.check_output(["git", "rev-parse", "HEAD"], cwd=path).decode().strip()
         log.info(f"Current commit: {current}")
 
-        if not all([
-            run_command(["git", "fetch", "origin"], cwd=path),
-            run_command(["git", "reset", "--hard", "HEAD"], cwd=path),
-            run_command(["git", "clean", "-fd"], cwd=path),
-            run_command(["git", "pull", "origin", branch], cwd=path)
-        ]):
+        # Just fetch the latest changes
+        if not run_command(["git", "fetch", "origin", branch], cwd=path):
             return False
 
         # Get new commit
-        if not run_command(["git", "rev-parse", "HEAD"], cwd=path):
-            return False
         new = subprocess.check_output(["git", "rev-parse", "HEAD"], cwd=path).decode().strip()
         log.info(f"Updated to commit: {new}")
     return True

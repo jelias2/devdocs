@@ -4,7 +4,7 @@ serve dir="devdocs_public":
 
 clean:
     rm -rf ./devdocs_public/*
-    rm -rf ./private_devdocs/*
+    rm -rf ./devdocs_private/*
     rm -rf ./submodules/*
 
 build config="dependencies.toml":  

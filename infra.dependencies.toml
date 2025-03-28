@@ -10,10 +10,10 @@ url = "https://github.com/ethereum-optimism/optimism.git"
 path = "submodules/optimism"
 branch = "develop"
 
-[dependencies.private]
-url = "https://github.com/ethereum-optimism/tmp-private-book.git"
-path = "submodules/tmp-private-book"
-branch = "main"
+# [dependencies.private]
+# url = "https://github.com/ethereum-optimism/tmp-private-book.git"
+# path = "submodules/tmp-private-book"
+# branch = "main"
 
 
 [book]
@@ -42,6 +42,6 @@ Key areas covered include:
 """
 
 create-missing = false
-build-dir = "private_devdocs"
+build-dir = "devdocs_private"
 
 google-analytics = "G-YNLYYEX7MN"

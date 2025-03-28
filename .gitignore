@@ -10,6 +10,6 @@ wheels/
 .venv
 
 devdocs_public/*
-private_devdocs/*
+devdocs_private/*
 
 submodules/*

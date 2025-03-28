@@ -4,12 +4,6 @@ set -euo pipefail
 
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 
-# Configure Git with PAT if it exists
-if [ -n "${GITHUB_PAT:-}" ]; then
-    echo "Configuring Git with PAT..."
-    git config --global url."https://${GITHUB_PAT}:x-oauth-basic@github.com/".insteadOf "https://github.com/"
-fi
-
 # Install Rust and set default toolchain if not already configured
 if ! command -v rustup &> /dev/null || ! rustup show active-toolchain &> /dev/null; then
     echo "Installing/configuring Rust..."
