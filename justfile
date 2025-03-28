@@ -3,10 +3,9 @@ serve dir="devdocs_public":
     ## mdbook serve --open submodules/index
 
 clean:
-    rm -rf ./public/*
     rm -rf ./devdocs_public/*
+    rm -rf ./private_devdocs/*
     rm -rf ./submodules/*
-    touch ./public/.gitkeep
 
 build config="dependencies.toml":  
     bash ./scripts/build-netlify.sh "{{config}}"
