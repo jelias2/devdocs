@@ -81,3 +81,7 @@ export DEPLOY_URL
 # Run the Python script with the config
 CONFIG_FILE=${1:-"dependencies.toml"}  # Use first argument or default
 uv run run.py -c "$CONFIG_FILE"
+
+# Netfily build will fail if secrets are found in repo. PATs are stored in .git directories of clone repos, so clean them after building
+echo "Cleaning Submodules"
+just clean-repos
