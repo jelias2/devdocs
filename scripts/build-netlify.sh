@@ -52,6 +52,13 @@ if ! command -v mdbook-mermaid &> /dev/null; then
     cargo install mdbook-mermaid mdbook-template
 fi
 
+# Install just if not already installed
+if ! command -v just &> /dev/null; then
+    echo "Installing just..."
+    source "$HOME/.cargo/env"  # Ensure cargo is in PATH
+    cargo install just
+fi
+
 # Install uv if not already installed
 if ! command -v uv &> /dev/null; then
     echo "Installing uv..."
