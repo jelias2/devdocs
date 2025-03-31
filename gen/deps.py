@@ -59,7 +59,7 @@ def clone_repo(url: str, path: str | Path, branch: str = "main") -> bool:
         url = auth_url
 
     if not path.exists():
-        log.info(f"Cloning {auth_url} to {path}")
+        log.info(f"Cloning {url} to {path}")
         if not run_command(["git", "clone", "-b", branch, url, str(path)]):
             return False
     else:
