@@ -1,3 +1,0 @@
-[build]
-# Command to build your site
-command = "./scripts/build-netlify.sh"
