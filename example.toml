@@ -1,0 +1,52 @@
+[dependencies]
+# Optimism monorepo
+[dependencies.optimism]
+# URL to clone the repo from 
+url = "https://github.com/ethereum-optimism/optimism.git"
+# Path to clone the repo to
+path = "submodules/optimism"
+# Branch to clone 
+branch = "develop"
+
+...
+
+# Define additional dependencies below
+[dependencies.N]
+url = ""
+path = ""
+branch = ""
+
+[book]
+# Title of the composite book
+title = "OP Stack Devdocs"
+# Authors
+authors = ["Optimism Developers"]
+language = "en"
+multilingual = false
+src = "src"
+# URL the book will be published at.
+# Use local host for local development, update when provisioning final version
+url = "http://localhost:8000"
+
+# README for the composite book
+readme = """
+# Introduction
+
+Loren ipsum deloreum
+"""
+
+# Summary for the composite book
+summary = """
+# Summary
+[Introduction](./README.md)
+"""
+
+
+create-missing = false
+# Build directory for the final composite book
+# When configuring netifly the netfily application should target this build-dir
+build-dir = "devdocs_public"
+
+# Google analytics ID
+google-analytics = ""
+

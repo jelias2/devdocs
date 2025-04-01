@@ -1,6 +1,6 @@
-# devdocs
+# Optimism Devdocs
 
-This repo aggregates `mdbook` docs from multiple repositories, and deploys them as a single website on Netlify. It
+This repo aggregates `mdbook` docs from multiple repositories, and deploys them as a website on Netlify. It
 works like this:
 
 1. Repositories are added as Git submodules,
@@ -9,19 +9,25 @@ works like this:
 
 Netlify performs steps two and three during the website build process.
 
-Books are deployed to https://devdocs.optimism.io
+Books are deployed to https://devdocs.optimism.io, and <TODO:private-devdocs>
 
 ## Adding a new repository
 
-To add a new repository, create a new Git submodule in the `submodules` directory using this command:
+Find the toml configuration file you would like to add the repository to. See the files
+such as dependencies.toml or infra.dependencies.toml
 
+Add a new dependencies object within the config
+
+```toml
+[dependencies]
+...
+[dependencies.new]
+url = "<repository-url>
+path = "submodules/<repo-name>"
+branch = "<branch to build from>"
 ```
-git submodule add <http-repo-url>
-```
 
-The repo will need to be public for Netlify to process it.
-
-## Adding new books
+## Adding new books to Remote Repository
 
 Once your repository has been added as a submodule, you can create a new book by initializing an `mdbook` in any
 subdirectory. In your `book.toml` make sure to specify the following fields:
@@ -40,5 +46,7 @@ additional renderers/plugins to your book without installing them in `scripts/bu
 
 ## CI
 
-Books are rebuilt every four hours. There's no need to manually update the submodules unless you need to build the books
+Books are rebuilt every four hours via triggering a build with circle ci.
+There's no need to manually update the submodules unless you need to build the books
 locally. The Netlify builder will automatically update the submodules with every build.
+
